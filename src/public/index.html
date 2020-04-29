@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/styles.css">
+    <title>Documentation</title>
+</head>
+<body>
+    <h1>Documentation for My File</h1>
+    <h2>what I am doing actualli is, I am serving my coded routeing files,</h2>
+    <h2>And as a programmer you shouldUnderstand What i am doing</h2>
+    <br>
+    <br>
+
+    <div class="codes">
+    <p>const express = require('express')<br>
+        const multer = require('multer')<br>
+        const sharp = require('sharp')<br>
+        const User = require('../models/user')<br>
+        const auth = require('../middleware/auth.js')<br>
+        const router = new express.Router()</p>
+        
+        <p>//To Create a user ---SIGN UP----<br>
+        router.post('/users', async (req, res) => {<br>
+         const user = User(req.body)<br>
+         try {<br>
+         await user.save()<br>
+         const token = await user.generateAuthToken()<br>
+         res.status(201).send({user, token})<br>
+         } catch (e) {<br>
+         res.status(400).send(e)<br>
+         }<br>
+        })</p>
+        
+        <p>// -----LOG IN ----<br>
+        router.post('/users/login', async (req, res) => {<br>
+         try {<br>
+         const user = await User.findByCredentials(req.body.email, req.body.password)<br>
+         const token = await user.generateAuthToken()<br>
+         res.send({user, token})<br>
+         } catch (e) {<br>
+         res.status(404).send(e.toString())<br>
+         }<br>
+        })</p>
+        
+        <p>
+        // LOG OUT<br>
+        router.post('/users/logout', auth, async (req, res)=>{<br>
+         try {<br>
+         req.user.tokens = req.user.tokens.filter((token)=>{<br>
+         return token.token !== req.token<br>
+         })<br>
+         await req.user.save()<br>
+         res.send()<br>
+         } catch (e) {<br>
+         res.status(500).send(e)<br>
+         }<br>
+        })</p>
+        
+        <p>//LOG OUT of All Device</p>
+        
+        <p>router.post('/users/logoutAll', auth, async (req, res) => {<br>
+         try {<br>
+         req.user.tokens = []<br>
+         await req.user.save()<br>
+         res.send()<br>
+         } catch (e) {<br>
+         res.status(500).send()<br>
+         }</p>
+        
+        <p> <br>
+        });</p>
+        
+        <p>//Get Method to Search a User<br>
+        router.get('/users/me',auth ,async (req, res) => {<br>
+         res.send(req.user)<br>
+        })</p>
+        
+        <p>
+        //Get method to search single User<br>
+        // router.get('/users/:id', async (req, res) => {<br>
+        // const _id = req.params.id<br>
+        // try {<br>
+        // const user = await User.findById(_id)<br>
+        // if (!user) {<br>
+        // return res.status(404).send()<br>
+        // }<br>
+        // res.send(user)<br>
+        // } catch (e) {<br>
+        // if (e.name === &quot;CastError&quot;) {<br>
+        // return res.status(404).send(e)<br>
+        // }<br>
+        // res.status(500).send(e)<br>
+        // }<br>
+        // })</p>
+        
+        <p>
+        // To Update a user<br>
+        router.patch('/users/me', auth, async (req, res) => {<br>
+         const updates = Object.keys(req.body)<br>
+         const allowedUpdates = ['name', 'email', 'password', 'age']<br>
+         const isValidOperation = updates.every((update) => allowedUpdates.includes(update))<br>
+         if (!isValidOperation) {<br>
+         return res.status(400).send({<br>
+         error: &quot;invalid updates!&quot;<br>
+         })<br>
+         }<br>
+         try {<br>
+         updates.forEach((update) => req.user[update] = req.body[update])<br>
+         await req.user.save()<br>
+         res.send(req.user)<br>
+         } catch (e) {<br>
+         res.status(400).send(e)<br>
+         }<br>
+        })</p>
+        
+        <p>//to Delete a uses<br>
+        router.delete('/users/me', auth, async (req, res) => {<br>
+         try {<br>
+         // const user = await User.findByIdAndDelete(req.use._id)<br>
+         // if (!user) {<br>
+         // return res.status(400).send(&quot;User Not Found&quot;)<br>
+         // }<br>
+         await req.user.remove()<br>
+         res.send(req.user)<br>
+         } catch (e) {<br>
+         res.status(500).send(e);<br>
+         }</p>
+        
+        <p>})</p>
+        
+        <p></p>
+        
+        <p>
+        const upload = multer({<br>
+         limits: {<br>
+         fileSize: 1000000<br>
+         },<br>
+         fileFilter(req, file,cb){<br>
+         if(!file.originalname.match(/\.(img|jpg|jpeg|png)$/)){<br>
+         cb(new Error(&quot;Please upload a Image file&quot;))<br>
+         }<br>
+         cb(undefined, true)<br>
+         }<br>
+        })</p>
+        
+        <p>
+        router.post('/users/me/avatar', auth, upload.single('avatar') , async (req, res) => {<br>
+         <br>
+         const buffer = await sharp(req.file.buffer).resize({width: 250, height: 250}).png().toBuffer()<br>
+         req.user.avatar = buffer<br>
+         await req.user.save()<br>
+         res.send()<br>
+        },(error,req,res, next)=> {<br>
+         res.status(400).send({error: error.message})<br>
+        })</p>
+        
+        <p>router.delete('/users/me/avatar', auth, async (req,res)=>{<br>
+         req.user.avatar= undefined<br>
+         await req.user.save()<br>
+         res.send()<br>
+        })</p>
+        
+        <p>router.get('/users/:id/avatar', async (req,res)=>{<br>
+         const _id = req.params.id</p>
+        
+        <p> try {<br>
+         const user = await User.findById(_id)<br>
+         if(!user || !user.avatar){<br>
+         throw new Error()<br>
+         }<br>
+         res.set('Content-Type', 'image/png')<br>
+         res.send(user.avatar)<br>
+         } catch (e) {<br>
+         res.status(404).send()<br>
+         }<br>
+        })</p>
+        
+        <p>router.post('/tasks',auth, async (req, res) => {<br>
+            const task = new Task({<br>
+            ...req.body,<br>
+            owner: req.user._id<br>
+            })<br>
+            try {<br>
+            await task.save()<br>
+            res.status(201).send(task)<br>
+            } catch (e) {<br>
+            res.status(400).send(e)<br>
+            }<br>
+           })</p>
+           
+           <p>//Get methos to read task by ID<br>
+           router.get('/tasks/:id',auth, async (req, res) => {<br>
+            const _id = req.params.id<br>
+            try {<br>
+            // const task = await Task.findById(_id)<br>
+            const task = await Task.findOne({_id, owner: req.user._id})<br>
+            if (!task) {<br>
+            return res.status(404).send()<br>
+            }<br>
+            res.send(task)<br>
+            } catch (e) {<br>
+            if (e.name === &quot;CastError&quot;) {<br>
+            return res.status(404).send()<br>
+            }<br>
+            res.status(500).send(e)<br>
+            }<br>
+           })</p>
+           
+           <p>//GET /tasks?sortBy=createdAt<br>
+           //GET /tasks?limit<br>
+           //GET tasks?completed=true<br>
+           //Get method to read all Task<br>
+           router.get('/tasks',auth, async (req, res) => {<br>
+            const match ={}<br>
+            const sort = {}<br>
+            if (req.query.completed) {<br>
+            match.completed = req.query.completed === 'true'<br>
+            }<br>
+            if(req.query.sortBy){<br>
+            const parts = req.query.sortBy.split(':')<br>
+            sort[parts[0]]= parts[1] === 'desc' ? -1: 1<br>
+            }<br>
+            try {<br>
+            // const tasks = await Task.find({owner: req.user._id}) this thing also works<br>
+            await req.user.populate({<br>
+            path: 'tasks',<br>
+            match,<br>
+            options: {<br>
+            limit: parseInt(req.query.limit),<br>
+            skip: parseInt(req.query.skip),<br>
+            sort<br>
+            }<br>
+            }).execPopulate()<br>
+            res.send(req.user.tasks)<br>
+            } catch (e) {<br>
+            res.send(e)<br>
+            }<br>
+           })</p>
+           
+           <p>// to update a task<br>
+           router.patch('/tasks/:id', auth, async (req, res) => {<br>
+            const _id = req.params.id<br>
+            const updates = Object.keys(req.body)<br>
+            const allowedUpdate = ['description', 'completed']<br>
+            const isAllowed = updates.every((update) => allowedUpdate.includes(update))</p>
+           
+           <p> if (!isAllowed) {<br>
+            res.status(400).send({<br>
+            error: &quot;invalid updates!&quot;<br>
+            })<br>
+            }<br>
+            try {<br>
+            const task = await Task.findOne({_id, owner: req.user._id})<br>
+            if (!task) {<br>
+            res.status(404).send()<br>
+            }<br>
+            updates.forEach((update) => task[update] = req.body[update])<br>
+            await task.save()<br>
+            return res.send(task);<br>
+            } catch (e) {<br>
+            res.status(500).send(e)<br>
+            }<br>
+           })</p>
+           
+           <p>router.delete('/tasks/:id', auth, async (req, res) => {<br>
+            const _id = req.params.id<br>
+            try {<br>
+            const task = await Task.findOneAndDelete({_id, owner: req.user._id})<br>
+            if (!task) {<br>
+            return res.status(404).send(&quot;task not found&quot;)<br>
+            }<br>
+            res.send(task);<br>
+            } catch (e) {<br>
+            res.status(500).send(e)<br>
+            }<br>
+           })</p>
+    </div>
+</body>
+</html>

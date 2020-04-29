@@ -10,6 +10,11 @@ const port = process.env.PORT
 
 
 //---------- Test Area --------------
+app.use(express.static('src/public'))
+
+app.get('/', (req, res) => {
+    res.send();
+});
 
 app.use(express.json())
 app.use(userRouter)
